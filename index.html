@@ -35,10 +35,19 @@
     }
     h1 { margin: 0; font-size: clamp(24px, 5vw, 38px); letter-spacing: .03em; }
     .subtitle { margin: 6px 0 0; color: var(--muted); }
+    .top-actions { display: flex; align-items: center; gap: 10px; }
+    .auto-next {
+      display: inline-flex; align-items: center; gap: 8px; padding: 9px 13px;
+      border: 1px solid var(--line); border-radius: 999px;
+      background: rgba(255,255,255,.8); color: var(--ink); cursor: pointer;
+      white-space: nowrap;
+    }
+    .auto-next input { width: 18px; height: 18px; accent-color: var(--green); cursor: pointer; }
     .shuffle {
       border: 1px solid var(--line); border-radius: 999px; padding: 10px 16px;
       background: rgba(255,255,255,.8); color: var(--ink); cursor: pointer;
     }
+    .shuffle:disabled { opacity: .55; cursor: wait; }
     .progress-wrap {
       display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center;
       margin: 18px 0;
@@ -104,7 +113,8 @@
     .hidden { display: none !important; }
     @media (max-width: 620px) {
       .topbar { align-items: flex-start; flex-direction: column; }
-      .shuffle { align-self: stretch; }
+      .top-actions { width: 100%; flex-wrap: wrap; }
+      .auto-next, .shuffle { flex: 1 1 auto; justify-content: center; }
       .card { border-radius: 18px; }
       .options.layout-four { gap: 8px; }
       .options.layout-four .option {
@@ -120,9 +130,15 @@
     <header class="topbar">
       <div>
         <h1>生物选择题随机练习</h1>
-        <p class="subtitle">共 136 题，完成后统一显示成绩和全部错题。</p>
+        <p class="subtitle" id="subtitle">正在加载题库...</p>
       </div>
-      <button class="shuffle" id="restart" type="button">重新随机开始</button>
+      <div class="top-actions">
+        <label class="auto-next" title="选择答案后自动进入下一题">
+          <input id="autoNext" type="checkbox">
+          <span>自动下一题</span>
+        </label>
+        <button class="shuffle" id="restart" type="button" disabled>重新随机开始</button>
+      </div>
     </header>
 
     <section id="quiz">
@@ -154,7 +170,6 @@
   </main>
 
   <script>
-    const SOURCE_QUESTIONS = [{"id":1,"question":"2018年《Cell》期刊报道，中国科学院上海神经科学研究所利用体细胞核移植技术，克隆出两只长尾猕猴，取名为“中中”和“华华”，这一里程碑式的成果让世界瞩目。决定“中中\"与“华华\"的性状极为相似的物质存在于","answer":"D","options":{"A":"细胞壁","B":"细胞膜","C":"细胞质","D":"细胞核"}},{"id":2,"question":"T2噬菌体侵染大肠杆菌的实验证明了","answer":"A","options":{"A":"DNA是遗传物质","B":"RNA是遗传物质","C":"蛋白质是遗传物质","D":"糖类是遗传物质"}},{"id":3,"question":"下列有关生物进化的表述，不正确的是","answer":"C","options":{"A":"捕食者的存在可促进被捕食者的进化","B":"生物之间的相互关系影响生物的进化","C":"突变和基因重组决定生物进化的方向","D":"生物多样性的形成是生物进化的结果"}},{"id":4,"question":"马达加斯加与非洲大陆只相隔狭窄的海峡，但是两地生物种类有较大差异。造成这种现象最可能的原因是","answer":"A","options":{"A":"自然选择的方向不同","B":"它们的祖先不同","C":"岛上的生物没有进化","D":"变异的方向不同"}},{"id":5,"question":"《晋书.车胤传》有“映雪囊萤”的典故，记载了东晋时期名臣车胤日夜苦读，将萤火虫聚集起来照明读书的故事。萤火虫尾部可发光，为发光直接供能的物质是","answer":"C","options":{"A":"淀粉","B":"脂肪","C":"ATP","D":"蛋白质"}},{"id":6,"question":"细菌被归为原核生物的原因是","answer":"C","options":{"A":"细胞体积小","B":"单细胞","C":"没有成形的细胞核","D":"没有DNA"}},{"id":7,"question":"下列有关生物体内蛋白质多样性的原因中不正确的是","answer":"A","options":{"A":"组成肽键的化学元素不同","B":"组成蛋白质的氨基酸种类和数量不同","C":"蛋白质的空间结构不同","D":"组成蛋白质的氨基酸排列顺序不同"}},{"id":8,"question":"细胞学说揭示了","answer":"B","options":{"A":"植物细胞与动物细胞的区别","B":"生物体结构的统一性","C":"细胞为什么能产生新细胞","D":"人类认识细胞是一个曲折的过程"}},{"id":9,"question":"原核细胞和真核细胞最明显的区别是","answer":"D","options":{"A":"有无核物质","B":"有无核糖体","C":"有无细胞膜","D":"有无核膜"}},{"id":10,"question":"下列元素中，构成有机物基本骨架的是","answer":"D","options":{"A":"氮","B":"氢","C":"氧","D":"碳"}},{"id":11,"question":"在封闭的温室内栽种农作物，下列不能提高作物产量的措施是","answer":"A","options":{"A":"降低室内CO₂浓度","B":"保持合理的室内昼夜温差","C":"增加光照强度","D":"适当延长光照时间"}},{"id":12,"question":"四分体是细胞在减数分裂过程中","answer":"D","options":{"A":"大小形态相同的四条染色体","B":"互相配对的四条染色体","C":"两条染色体的四个染色单体","D":"一对同源染色体配对时的四个染色单体"}},{"id":13,"question":"一对色觉正常的夫妇生了一个红绿色盲的男孩，男孩的外祖父。外祖母和祖母色觉都正常，祖父为色盲。该男孩的色盲基因来自？","answer":"D","options":{"A":"祖父","B":"祖母","C":"外祖父","D":"外祖母"}},{"id":14,"question":"、太空种菜实验过程中发现，生菜在红光照射下生长得好，在蓝光照射下形态舒展。下列色素中与植物叶肉细胞的光反应无关的是","answer":"D","options":{"A":"叶绿素a","B":"叶绿素b","C":"类胡萝卜素","D":"花青素"}},{"id":15,"question":"与细胞膜形成的吞噬泡融合，并消化吞噬泡内物质的细胞器是","answer":"D","options":{"A":"线粒体","B":"内质网","C":"高尔基体","D":"溶酶体"}},{"id":16,"question":"烫发时，先用还原剂使头发角蛋白的二硫键断裂，再用卷发器将头发固定形状，最后用氧化剂使角蛋白在新的位置形成二硫键。这一过程改变了角蛋白的","answer":"A","options":{"A":"空间结构","B":"氨基酸种类","C":"氨基酸数目","D":"氨基酸排列顺序"}},{"id":17,"question":"下列与人们饮食观念相关的叙述中，正确的是","answer":"C","options":{"A":"脂质会使人发胖，不要摄入","B":"谷物不含糖类，糖尿病患者可放心食用","C":"食物含有基因，这些DNA片段可被消化分解","D":"肉类中的蛋白质经油炸、烧烤后，更益于健康"}},{"id":18,"question":"决定自然界中生物特异性和多样性的根本原因是","answer":"A","options":{"A":"DNA分子的多样性和特异性","B":"蛋白质分子的多样性和特异性","C":"化学元素的多样性和特异性","D":"氨基酸分子的多样性和特异性"}},{"id":19,"question":"纸层析法可用来分离光合色素，下列装置正确的是","answer":"C","options":{"A":"装置①","B":"装置②","C":"装置③","D":"装置④"},"image":"quiz_assets/q19.png"},{"id":20,"question":"萤火虫尾部可以发光，发光的直接供能物质是","answer":"D","options":{"A":"淀粉","B":"蛋白质","C":"脂肪","D":"ATP"}},{"id":21,"question":"在大田的边缘和水沟的两侧，同一品种的小麦植株总体上比大田中间的植株长得高壮，产生这种现象的主要原因是","answer":"B","options":{"A":"基因重组引起的性状分离","B":"环境差异引起的性状分离","C":"隐性基因突变为显性基因","D":"染色体的结构和数目的变化"}},{"id":22,"question":"关于分子的双螺旋结构的叙述正确的是","answer":"B","options":{"A":"核苷酸通过肽键相互连接","B":"A与T配对，C与G配对","C":"DNA分子的两条链方向相同","D":"碱基和磷酸交替排列在内侧"}},{"id":23,"question":"DNA在完全水解后，得到的化学物质是","answer":"D","options":{"A":"氨基酸、葡萄糖、碱基","B":"氨基酸、核苷酸、葡萄糖","C":"核糖、碱基、磷酸","D":"脱氧核糖、碱基、磷酸"}},{"id":24,"question":"线粒体、叶绿体和内质网都具有","answer":"C","options":{"A":"基粒","B":"能量转换的功能","C":"膜结构","D":"少量DNA"}},{"id":25,"question":"下列细胞结构中，由双层膜包被的是","answer":"D","options":{"A":"液泡","B":"高尔基体","C":"内质网","D":"细胞核"}},{"id":26,"question":"嫩肉粉可以使肉类食品口感松软变嫩，其主要成分应该是","answer":"B","options":{"A":"核酸酶","B":"蛋白酶","C":"脂肪酶","D":"淀粉酶"}},{"id":27,"question":"活细胞中含量最多的化合物是","answer":"B","options":{"A":"蛋白质","B":"水","C":"糖","D":"DNA"}},{"id":28,"question":"唾液腺细胞中合成淀粉酶的细胞器是","answer":"B","options":{"A":"线粒体","B":"核糖体","C":"内质网","D":"高尔基体"}},{"id":29,"question":"可以与细胞膜形成的吞噬泡融合，并消化掉吞噬泡内物质的细胞器是","answer":"D","options":{"A":"线粒体","B":"内质网","C":"高尔基体","D":"溶酶体"}},{"id":30,"question":"下列有关细胞膜结构和功能的叙述中，不正确的是","answer":"A","options":{"A":"细胞膜具有全透性","B":"细胞膜具有识别功能","C":"细胞膜有一定的流动性","D":"细胞膜的两侧结构不对称"}},{"id":31,"question":"细胞核中携带遗传信息的是","answer":"D","options":{"A":"核膜","B":"核孔","C":"核仁","D":"染色质"}},{"id":32,"question":"下列遗传病中，由染色体变异引起的是","answer":"C","options":{"A":"白化病","B":"血友病","C":"猫叫综合征","D":"镰刀型细胞贫血症"}},{"id":33,"question":"遗传咨询对预防遗传病有积极意义。下列情形中不需要遗传咨询的是","answer":"A","options":{"A":"男方幼年曾因外伤截肢","B":"亲属中有智力障碍患者","C":"女方是先天性聋哑患者","D":"亲属中有血友病患者"}},{"id":34,"question":"我国科学家精选的农作物种子通过“天宫一号”搭载上天，利用宇宙空间特殊环境诱发的变异育种，这些变异","answer":"C","options":{"A":"是定向的","B":"对人类都有益","C":"为人工选择提供原材料","D":"不能遗传给后代"}},{"id":35,"question":"蜜蜂采蜜时，口器伸入鼠尾草的花筒中，头部推动鼠尾草“T”字形雄蕊，花粉落在头部。鼠尾草雄蕊先成熟，等到雄蕊凋谢后雌蕊成熟，其他蜜蜂采蜜时可使花粉落到柱头。下列相关叙述不正确的是","answer":"B","options":{"A":"鼠尾草的“T”字形雄蕊结构有利于虫媒传粉","B":"蜜蜂采蜜时与鼠尾草的花之间不存在信息传递","C":"花蕊成熟时间不同有利于遗传（基因）多样性","D":"鼠尾草与蜜蜂相互适应、协同进化"},"image":"quiz_assets/q35.png"},{"id":36,"question":"近期流行的乙流病毒是一种单链RNA膜病毒。当其遗传物质RNA完全水解后，得到的化学物质是","answer":"D","options":{"A":"氨基酸、葡萄糖、含氮碱基","B":"核糖、核苷酸、葡萄糖","C":"氨基酸、核苷酸、葡萄糖","D":"核糖、含氮碱基、磷酸"}},{"id":37,"question":"下列有关细胞体积的叙述中，不正确的是","answer":"C","options":{"A":"与原核细胞相比，真核细胞体积一般较大","B":"细胞体积越小，其表面积与体积比值越大","C":"生物体体积越大，其细胞体积也越大","D":"细胞体积小，利于完成各项生命活动"}},{"id":38,"question":"右图是三个相邻植物细胞之间水分流动方向示意图。图中三个细胞的细胞液浓度关系是","answer":"B","options":{"A":"甲>乙>丙","B":"甲\u003c乙\u003c丙","C":"甲>乙，乙\u003c丙","D":"甲\u003c乙，乙>丙"},"image":"quiz_assets/q38.png"},{"id":39,"question":"蔗糖不能透过红细胞的细胞膜。将红细胞分别浸入高浓度的蔗糖溶液和蒸馏水中，一段时间后细胞形态发生的变化是","answer":"D","options":{"A":"涨破、皱缩","B":"皱缩、皱缩","C":"膨胀、膨胀","D":"皱缩、涨破"}},{"id":40,"question":"下图为ATP和ADP相互转化的示意图，对这一过程的叙述不正确的是","answer":"D","options":{"A":"存在着能量的释放和储存","B":"保证了生命活动顺利进行","C":"持续不断地在生物活细胞中进行","D":"合成ATP的能量都来自细胞呼吸"},"image":"quiz_assets/q40.png"},{"id":41,"question":"肺炎双球菌的转化实验中，使R型细菌转化为S型细菌的转化因子是","answer":"D","options":{"A":"荚膜","B":"蛋白质","C":"R型细菌的DNA","D":"S型细菌的DNA"}},{"id":42,"question":"一个DNA分子复制完毕后，新形成的DNA子链","answer":"B","options":{"A":"是DNA母链的片段","B":"与DNA母链之一相同","C":"与DNA母链相同，但U取代T","D":"与DNA母链完全不同"}},{"id":43,"question":"根据遗传学原理，能快速获得纯合子的育种方法是","answer":"C","options":{"A":"杂交育种","B":"多倍体育种","C":"单倍体育种","D":"诱变育种"}},{"id":44,"question":"基因突变、基因重组和染色体变异的共同点是都能","answer":"C","options":{"A":"产生新的基因","B":"产生新的基因型","C":"产生可遗传的变异","D":"改变基因中的遗传信息"}},{"id":45,"question":"产生镰刀型细胞贫血症的根本原因是","answer":"D","options":{"A":"血液中的红细胞易变形破裂","B":"血红蛋白中一个氨基酸不正常","C":"信使RNA中一个碱基发生了改变","D":"基因中一个碱基对发生了改变"}},{"id":46,"question":"细胞内葡萄糖分解为丙酮酸的过程","answer":"A","options":{"A":"不产生CO₂","B":"必须在有条件下进行","C":"在线粒体内进行","D":"反应速度不受温度影响"}},{"id":47,"question":"细胞呼吸中，吸入的O₂最终形成了","answer":"B","options":{"A":"CO₂","B":"H₂O","C":"ATP","D":"丙酮酸"}},{"id":48,"question":"细胞呼吸的实质是","answer":"C","options":{"A":"分解有机物，贮藏能量","B":"合成有机物，贮藏能量","C":"分解有机物，释放能量","D":"合成有机物，释放能量"}},{"id":49,"question":"一分子ATP中，含有的高能磷酸键和磷酸基团的数目分别是","answer":"A","options":{"A":"2和3","B":"1和3","C":"2和2","D":"4和6"}},{"id":50,"question":"蔬菜和水果长时间储藏、保鲜所需要的条件为","answer":"B","options":{"A":"低温、干燥、低氧","B":"低温、湿度适中、低氧","C":"高温、干燥、高氧","D":"高温、湿度适中、高氧"}},{"id":51,"question":"进行有性生殖的生物，对维持其前后代体细胞染色体数目恒定起重要作用的生理活动是","answer":"D","options":{"A":"有丝分裂与受精作用","B":"细胞增殖与细胞分化","C":"减数分裂与有丝分裂","D":"减数分裂与受精作用"}},{"id":52,"question":"同源染色体是指","answer":"B","options":{"A":"一条染色体复制形成的两条染色体","B":"减数分裂过程中配对的两条染色体","C":"形态特征大体相同的两条染色体","D":"分别来自父方和母方的两条染色体"}},{"id":53,"question":"减数分裂过程中，姐妹染色单体的分离发生在","answer":"D","options":{"A":"减数分裂间期","B":"形成四分体时","C":"减数第一次分裂","D":"减数第二次分裂"}},{"id":54,"question":"果蝇作为实验材料所具备的优点，不包括","answer":"A","options":{"A":"比较常见，具有危害性","B":"生长速度快，繁殖周期短","C":"具有易于区分的相对性状","D":"子代数目多，有利于获得客观的实验结果"}},{"id":55,"question":"有丝分裂和减数分裂的共同点是","answer":"C","options":{"A":"同源染色体联会","B":"子细胞染色体数目减半","C":"姐妹染色单体分开","D":"非同源染色体自由组合"}},{"id":56,"question":"若判定运动员在运动时肌肉细胞是否进行了无氧呼吸，应监测体内积累的","answer":"B","options":{"A":"ADP","B":"乳酸","C":"CO₂","D":"O₂"}},{"id":57,"question":"酵母菌进行有氧呼吸和无氧呼吸的共同终产物是","answer":"A","options":{"A":"CO₂","B":"H₂O","C":"酒精","D":"乳酸"}},{"id":58,"question":"结合细胞呼吸原理分析，下列日常生活中的做法不合理的是","answer":"D","options":{"A":"包扎伤口选用透气的创可贴","B":"花盆中的土壤需要经常松土","C":"真空包装食品以延长保质期","D":"采用快速短跑进行有氧运动"}},{"id":59,"question":"北方秋季，银杏、黄栌、红枫等树种的叶片由绿变黄或变红，一时间层林尽染，分外妖娆。低温造成叶肉细胞中含量下降最显著的色素是","answer":"C","options":{"A":"叶黄素","B":"花青素","C":"叶绿素","D":"胡萝卜素"}},{"id":60,"question":"下列对酶的叙述中正确的是","answer":"C","options":{"A":"所有的酶都是蛋自质","B":"催化生化反应前后酶的性质发生改变","C":"高温使酶的分子结构破坏而失去活性","D":"酶与无机催化剂的催化效率相同"}},{"id":61,"question":"果蝇的下列细胞中，只含一个染色体组的是","answer":"D","options":{"A":"受精卵","B":"体细胞","C":"精原细胞","D":"精子"}},{"id":62,"question":"正常情况下，女性卵细胞中常染色体的数目和性染色体为","answer":"C","options":{"A":"44，XX","B":"44，XY","C":"22，X","D":"22，Y"}},{"id":63,"question":"某生物的体细胞含有42条染色体，在减数第一次分裂形成四分体时，细胞内含有的染色单体、染色体和DNA分子数依次是","answer":"B","options":{"A":"42、84、84","B":"84、42、84","C":"84、42、42","D":"42、42、84"}},{"id":64,"question":"右图为某动物细胞分裂的示意图，该细胞处于","answer":"C","options":{"A":"有丝分裂中期","B":"有丝分裂后期","C":"减数第一次分裂后期","D":"减数第二次分裂后期"},"image":"quiz_assets/q64.png"},{"id":65,"question":"某动物的基因型为AaBb，这两对基因的遗传符合自由组合定律。若它的一个精原细胞经减数分裂后产生的四个精细胞中，有一个精细胞的基因型为AB，那么另外三个的基因型分别是","answer":"B","options":{"A":"Ab、aB、ab","B":"AB、ab、ab","C":"ab、AB、AB","D":"AB、AB、AB"}},{"id":66,"question":"下面是某植物的细胞有丝分裂图像，其中属于后期的是","answer":"A","options":{"A":"图A","B":"图B","C":"图C","D":"图D"},"image":"quiz_assets/q66.png"},{"id":67,"question":"下列关于细胞分裂、分化、衰老和凋亡的叙述，正确的是","answer":"B","options":{"A":"细胞分化使各种细胞的遗传物质产生差异","B":"细胞的衰老和凋亡是正常的生命现象","C":"细胞分化仅发生于胚胎发育阶段","D":"所有体细胞都不断地进行细胞分裂"}},{"id":68,"question":"与正常细胞相比，癌细胞","answer":"C","options":{"A":"不再分裂","B":"呼吸作用降低","C":"可以无限增殖","D":"水分减少"}},{"id":69,"question":"细胞的全能性是指","answer":"D","options":{"A":"细胞具有各项生理功能","B":"已分化的细胞能恢复到分化前的状态","C":"已分化的细胞全部能再进一步分化","D":"已分化的细胞仍具有发育成完整个体的潜能"}},{"id":70,"question":"在豌豆杂交实验中，为防止自花传粉应","answer":"C","options":{"A":"将花粉涂在雌蕊柱头上","B":"采集另一植株的花粉","C":"除去未成熟花的雄蕊","D":"人工传粉后套上纸袋"}},{"id":71,"question":"某生物的基因型为AaBb，这两对基因的遗传符合自由组合定律。该生物测交后代中，与其两个亲代基因型都不同的个体所占的百分比是","answer":"B","options":{"A":"25％","B":"50％","C":"75％","D":"100％"}},{"id":72,"question":"一株基因型为AaBb的小麦自交(这两对基因独立遗传)，后代的基因型有","answer":"C","options":{"A":"2种","B":"4种","C":"9种","D":"16种"}},{"id":73,"question":"下列物质的层次关系山大到小的是","answer":"A","options":{"A":"染色体→DNA→基因→脱氧核苷酸","B":"染色体→DNA→脱氧核苷酸→基因","C":"染色体→脱氧核苷酸→DNA→基因","D":"基因→染色体→脱氧核苷酸→DNA"}},{"id":74,"question":"下列为四种遗传病的系谱图，能够排除伴性遗传的是","answer":"A","options":{"A":"①","B":"④","C":"①③","D":"②④"},"image":"quiz_assets/q74.png"},{"id":75,"question":"下列关于细胞周期的叙述中，正确的是","answer":"C","options":{"A":"抑制DNA的合成，细胞将停留在分裂期","B":"细胞周期分为前期、中期、后期、末期","C":"细胞分裂间期为细胞分裂期提供物质基础","D":"成熟的生殖细胞产生后立即进入下一个细胞周期"}},{"id":76,"question":"秋水仙素可以破坏纺锤体的生成，那么经过秋水仙素处理的分裂期细胞将停留在细胞周期哪一期？","answer":"B","options":{"A":"间期","B":"前期","C":"中期","D":"后期"}},{"id":77,"question":"动物细胞有丝分裂区别于植物细胞有丝分裂的是","answer":"C","options":{"A":"核膜、核仁消失","B":"形成纺锤体","C":"中心粒周围发出星射线","D":"着丝点(粒)分裂"}},{"id":78,"question":"在一个种群中基因型为AA的个体占70％，Aa的个体占20％，aa的个体占10％。A基因和a基因的基因频率分别是","answer":"D","options":{"A":"70％、30％","B":"50％、50％","C":"90％、10％","D":"80％、20％"}},{"id":79,"question":"下列各对生物性状中，属于相对性状的是","answer":"B","options":{"A":"狗的短毛和狗的卷毛","B":"人的右利手和人的左利手","C":"豌豆的红花和豌豆的高茎","D":"羊的黑毛和兔的白毛"}},{"id":80,"question":"下列可用于检测蛋白质的试剂及反应呈现的颜色是","answer":"D","options":{"A":"苏丹III染液，橘黄色","B":"斐林试剂(本尼迪特试剂)，砖红色","C":"碘液，蓝色","D":"双缩脲试剂，紫色"}},{"id":81,"question":"鸡在胚胎发育早期趾间有蹼状结构，随着胚胎的发育，蹼逐渐消失的原因是","answer":"D","options":{"A":"细胞增殖","B":"细胞衰老","C":"细胞坏死","D":"细胞凋亡"}},{"id":82,"question":"水稻和玉米从外界吸收硝酸盐和磷酸盐，可以用于细胞内合成","answer":"D","options":{"A":"蔗糖","B":"脂肪酸","C":"甘油","D":"核酸"}},{"id":83,"question":"将刚萎蔫的菜叶放入清水中，菜叶细胞含水量能够得到恢复的主要原因是","answer":"A","options":{"A":"自由扩散和协助扩散","B":"主动运输和胞吞","C":"自由扩散和主动运输","D":"协助扩散和主动运输"}},{"id":84,"question":"在植物工厂中，LED灯等人工光源可以为植物的生长源源不断地提供能量。从光合色素吸收光谱的角度分析，适宜的光源组合为","answer":"B","options":{"A":"红光和绿光","B":"红光和蓝光","C":"黄光和蓝光","D":"黄光和绿光"}},{"id":85,"question":"科学家测定某保护区四种鸟类的ALXI基因的核苷酸序列，由此判断它们之间的亲缘关系。这为生物的进化提供了","answer":"B","options":{"A":"胚胎学证据","B":"分子水平证据","C":"比较解剖学证据","D":"古生物化石证据"}},{"id":86,"question":"组成染色体和染色质的主要物质是","answer":"A","options":{"A":"蛋白质和DNA","B":"DNA和RNA","C":"蛋白质和RNA","D":"DNA和脂质"}},{"id":87,"question":"磷脂分子参与组成的结构是","answer":"A","options":{"A":"细胞膜","B":"中心体","C":"染色体","D":"核糖体"}},{"id":88,"question":"在翻译过程中，密码子决定了蛋白质中的氨基酸种类。密码子位于","answer":"D","options":{"A":"基因上","B":"DNA上","C":"tRNA上","D":"mRNA上"}},{"id":89,"question":"利用秋水仙素诱导产生多倍体，秋水仙素作用于细胞周期的","answer":"B","options":{"A":"分裂间期","B":"分裂期的前期","C":"分裂期的中期","D":"分裂期的后期"}},{"id":90,"question":"熟鸡蛋比生鸡蛋易消化，是因为加热使鸡蛋中的蛋白质分子变得伸展、松散，容易被水解。高温改变了蛋白质分子的","answer":"D","options":{"A":"氨基酸种类","B":"氨基酸数目","C":"肽键数目","D":"空间结构"}},{"id":91,"question":"颤蓝细菌与黑藻相比，不具备的结构是","answer":"C","options":{"A":"核糖体","B":"细胞膜","C":"成形细胞核","D":"细胞壁"}},{"id":92,"question":"根据细胞膜结构模式图，下列叙述错误的是","answer":"C","options":{"A":"磷脂双分子层为基本支架","B":"糖蛋白分布在细胞膜外侧","C":"蛋白质全部贯穿磷脂层","D":"细胞膜具有流动性"},"image":"quiz_assets/q92.png"},{"id":93,"question":"菠菜根尖细胞不能进行的生理过程是","answer":"B","options":{"A":"有氧呼吸","B":"光合作用","C":"转录","D":"细胞分裂"}},{"id":94,"question":"下列物质不属于内环境组成成分的是","answer":"C","options":{"A":"血浆蛋白","B":"葡萄糖","C":"血红蛋白","D":"无机盐"}},{"id":95,"question":"种群s型增长曲线，K值含义是","answer":"B","options":{"A":"种群起始数量","B":"环境容纳量","C":"种群增长最快数量","D":"出生率等于0时数量"}},{"id":96,"question":"现代生物进化理论的核心内容是","answer":"B","options":{"A":"用进废退","B":"自然选择学说","C":"获得性遗传","D":"物种不变论"}},{"id":97,"question":"下列属于生态系统的是","answer":"C","options":{"A":"一片草原所有羊","B":"一个池塘全部生物","C":"一片森林","D":"一块田所有杂草"}},{"id":98,"question":"诱变育种原理是","answer":"C","options":{"A":"基因重组","B":"染色体数目变异","C":"基因突变","D":"染色体结构变异"}},{"id":99,"question":"正常人体血浆渗透压主要来自","answer":"A","options":{"A":"蛋白质和无机盐","B":"葡萄糖","C":"脂肪","D":"核酸"}},{"id":100,"question":"植物根细胞吸水方式主要是","answer":"B","options":{"A":"主动运输","B":"自由扩散","C":"胞吞","D":"协助扩散"}},{"id":101,"question":"下列不属于生态系统信息传递作用的是","answer":"C","options":{"A":"利于种群繁衍","B":"调节种间关系","C":"加快能量流动速率","D":"利于生命活动正常进行"}},{"id":102,"question":"DNA复制时需要的酶是","answer":"B","options":{"A":"蛋白酶","B":"DNA聚合酶","C":"脂肪酶","D":"淀粉酶"}},{"id":103,"question":"原核、真核共有的细胞器只有","answer":"C","options":{"A":"高尔基体","B":"叶绿体","C":"核糖体","D":"线粒体"}},{"id":104,"question":"大豆的豆荚颜色有黑色和棕色，受一对等位基因控制，纯合黑色大豆与纯合棕色大豆杂交，F1表现为黑色。则FI自交所得F2中黑色与棕色的比例为","answer":"B","options":{"A":"1∶1","B":"3∶1","C":"15∶1","D":"1∶3"}},{"id":105,"question":"低温储藏种子抑制呼吸作用原理是","answer":"A","options":{"A":"降低酶活性","B":"破坏酶结构","C":"减少水分","D":"隔绝氧气"}},{"id":106,"question":"隔离是物种形成必要条件，新物种标志是","answer":"B","options":{"A":"形态改变","B":"产生生殖隔离","C":"地理隔离","D":"基因突变"}},{"id":107,"question":"叶肉细胞光合产物运出叶绿体的主要形式是","answer":"B","options":{"A":"葡萄糖","B":"蔗糖","C":"淀粉","D":"糖原"}},{"id":108,"question":"癌细胞特点错误的是","answer":"C","options":{"A":"无限增殖","B":"形态改变","C":"细胞膜糖蛋白增多","D":"易分散转移"}},{"id":109,"question":"叶绿体是光合作用的场所。下图为叶绿体模式图，其中光反应发生在","answer":"C","options":{"A":"①","B":"②","C":"③","D":"④"},"image":"quiz_assets/q109.png"},{"id":110,"question":"研究人员发现一株矮秆小麦，其Rht17基因部分碱基序列发生改变。图中这种改变引起的可遗传变异类型属于","answer":"A","options":{"A":"基因突变","B":"基因重组","C":"染色体结构变异","D":"染色体数目变异"},"image":"quiz_assets/q110.png"},{"id":111,"question":"科学家测定某保护区四种鸟类的ALXI基因的核苷酸序列，由此判断它们之间的亲缘关系。这为生物的进化提供了","answer":"B","options":{"A":"胚胎学证据","B":"分子水平证据","C":"比较解剖学证据","D":"古生物化石证据"}},{"id":112,"question":"蜜蜂倾向于访问短且弯曲、蓝紫色的蜜距，天蛾倾向于访问极长、颜色较淡的蜜距。传粉者的访花偏好与植物蜜距之间相互适应的原因可概括为","answer":"C","options":{"A":"用进废退","B":"基因重组","C":"协同进化","D":"地理隔离"},"image":"quiz_assets/q112.png"},{"id":113,"question":"经典型半乳糖血症是一种常染色体隐性遗传病。一对表现正常的夫妇，生了一个患病的孩子，他们再生一个孩子患此病的概率是","answer":"B","options":{"A":"1/2","B":"1/4","C":"1/6","D":"1/8"}},{"id":114,"question":"我国科学家利用某种小分子物质诱导特定的体细胞，成为多潜能干细胞(CiPSC)，再利用CiPSC得到胰岛B细胞。这种变化是因为CiPSC发生了","answer":"B","options":{"A":"细胞衰老","B":"细胞分化","C":"细胞坏死","D":"细胞凋亡"}},{"id":115,"question":"采用一定量羟基脲加入菠菜根尖培养液，能特异性抑制DNA合成，使细胞分裂停止。羟基脲发生作用是在细胞分裂的","answer":"A","options":{"A":"分裂间期","B":"前期","C":"中期","D":"后期"}},{"id":116,"question":"ATP是细胞内的能量“货币”，细胞中不能合成ATP的场所是","answer":"B","options":{"A":"细胞质基质","B":"内质网","C":"线粒体","D":"叶绿体"}},{"id":117,"question":"成熟巨核细胞膜表面形成许多凹陷，相邻凹陷的细胞膜在深部融合，使巨核细胞的一部分脱离，形成数量众多的血小板。这一过程体现了细胞膜","answer":"B","options":{"A":"能够控制物质进出细胞","B":"具有一定的流动性","C":"与细胞间的信息交流有关","D":"分隔细胞内外环境"}},{"id":118,"question":"将相同大小的绿萝叶圆片抽气后置于富含CO₂的清水中，用不同颜色的光照射，结果如图。相关叙述错误的是","answer":"A","options":{"A":"绿光组叶圆片光合作用强度最大","B":"各组实验所用叶圆片数量一致","C":"光合作用产生氧气使叶圆片上浮","D":"各组叶圆片的上浮时间有差异"},"image":"quiz_assets/q118.png"},{"id":119,"question":"新型冠状病毒是一种RNA病毒。其遗传物质完全水解后，得到的化学物质是","answer":"D","options":{"A":"氨基酸、葡萄糖、含氮碱基","B":"核糖、核苷酸、葡萄糖","C":"氨基酸、核苷酸、葡萄糖","D":"核糖、含氮碱基、磷酸"}},{"id":120,"question":"某DNA片段一条链上的碱基序列为5'-GAATTC-3'，则其互补链的碱基序列是","answer":"B","options":{"A":"5'-CUUAAG-3'","B":"3'-CTTAAG-5'","C":"5'-CTTGAA-3'","D":"3'-CAATTG-5'"}},{"id":121,"question":"同一人体内神经细胞和胰岛细胞的形态、结构和功能不同，是因为这两种细胞内","answer":"C","options":{"A":"tRNA不同","B":"rRNA不同","C":"mRNA不同","D":"DNA上的遗传信息不同"}},{"id":122,"question":"斯万特·帕博荣获2022年诺贝尔生理学或医学奖。他的开创性研究包括对已灭绝的尼安德特人的基因组进行测序，揭示当今人类和尼安德特人的遗传差异，为人类进化提供了","answer":"A","options":{"A":"分子生物学证据","B":"胚胎学证据","C":"细胞生物学证据","D":"比较解剖学证据"}},{"id":123,"question":"如图为某二倍体动物细胞分裂过程中某时期的示意图，该图所示时期为","answer":"D","options":{"A":"有丝分裂中期","B":"有丝分裂后期","C":"减数第一次分裂后期","D":"减数第二次分裂后期"},"image":"quiz_assets/q123.png"},{"id":124,"question":"研究发现，板足鲎很可能是节肢动物登陆的先行者。中国科学家在华南地区距今约4.3亿年的地层中新发现了一种板足鲎一一一一秀山恐鲎，其第三对附肢特化增大、长有硬质长刺，丰富了板足鲎的形态多样性，进一步为研究节肢动物的进化提供了","answer":"A","options":{"A":"化石证据","B":"细胞水平证据","C":"胚胎学证据","D":"分子水平证据"}},{"id":125,"question":"下图表示细胞中发生的水解反应。若生物大分子为蛋白质，则其单体是","answer":"C","options":{"A":"葡萄糖","B":"DNA","C":"氨基酸","D":"淀粉"},"image":"quiz_assets/q125.png"},{"id":126,"question":"痢疾内变形虫是寄生在人体肠道内的一种变形虫，能分泌蛋白酶，溶解人的肠壁组织，引发阿米巴痢疾。该蛋白酶在细胞中的合成场所是","answer":"C","options":{"A":"溶酶体","B":"中心体","C":"核糖体","D":"高尔基体"}},{"id":127,"question":"紫色洋葱鳞片叶外表皮细胞在0.3 g/mL蔗糖溶液中发生质壁分离。图中①—④标注错误的是","answer":"C","options":{"A":"①","B":"②","C":"③","D":"④"},"image":"quiz_assets/q127.png"},{"id":128,"question":"根据图示多酶片说明书，推测此药片的主要功能是","answer":"D","options":{"A":"构建细胞","B":"提供能量","C":"杀灭细菌","D":"帮助消化"},"image":"quiz_assets/q128.png"},{"id":129,"question":"DNA携带遗传信息，随机选取的两个个体有相同遗传信息的可能性极低，因此DNA可以像指纹一样用来识别身份，这种方法称为DNA指纹技术。此技术不常应用于","answer":"C","options":{"A":"亲子关系鉴定","B":"犯罪嫌疑人确认","C":"糖尿病的确诊","D":"遇难者残骸确认"}},{"id":130,"question":"离子束是一种辐射源。用离子束照射番茄种子，选育得到的“鲁番茄7号”有早熟、果实大等特点。这种育种方式属于","answer":"A","options":{"A":"诱变育种","B":"多倍体育种","C":"杂交育种","D":"单倍体育种"}},{"id":131,"question":"海参离开海水时会发生自溶，即构成体壁和肠的蛋白质、糖类均发生不同程度的降解，且降解程度受到温度、pH、盐度的影响。据此推测，促使海参“自溶”的物质最可能是","answer":"D","options":{"A":"水","B":"NaCl","C":"糖类","D":"蛋白质"}},{"id":132,"question":"在“观察根尖分生区组织细胞的有丝分裂”实验中，图中箭头所指细胞的主要特征是","answer":"A","options":{"A":"染色体移向细胞两极","B":"核膜与核仁出现","C":"着丝粒排列在赤道板上","D":"细胞缢裂成两部分"},"image":"quiz_assets/q132.png"},{"id":133,"question":"科学家将拟南芥和水稻种子送至天宫二号，利用宇宙空间的特殊环境诱发的变异进行育种，这些变异","answer":"C","options":{"A":"是定向的","B":"对人类都有益","C":"为人工选择提供原材料","D":"不能遗传给后代"}},{"id":134,"question":"2017年，我国科学家对深圳拟兰进行基因组测序，并与其他兰花基因组比较，结果可为研究兰花的进化提供CA胚胎学证据","answer":"C","options":{"A":"胚胎学证据","B":"古生物化石证据","C":"分子水平证据","D":"比较解剖学证据"}},{"id":135,"question":"鸭蹼病患者手指粘连，某家系中该病只能由父亲遗传给儿子，该家系此致病基因位于","answer":"C","options":{"A":"常染色体","B":"x染色体","C":"Y染色体","D":"线粒体"}},{"id":136,"question":"由于盗猎，某地区40年间雌性非洲象天生无象牙的比例由1&5％上升至33％。相关叙述不正确的是","answer":"B","options":{"A":"该地区的全部非洲象构成一个种群","B":"雌象无象牙比例上升是基因突变的结果","C":"盗猎行为对雌象有无象牙起到选择作用","D":"该过程中种群的基因频率发生定向改变"}}];
     const letters = ['A', 'B', 'C', 'D'];
     // 根据原 DOCX 中每道题的选项段落数，还原四列、两列或单列排版。
     const FOUR_COLUMN_IDS = new Set([
@@ -170,9 +185,11 @@
       110, 111, 112, 114, 117, 120, 121, 122, 123, 124, 128, 130,
       133, 134, 136
     ]);
+    let sourceQuestions = [];
     let questions = [];
     let answers = {};
     let index = 0;
+    let autoAdvanceTimer = null;
 
     const quiz = document.querySelector('#quiz');
     const results = document.querySelector('#results');
@@ -184,6 +201,8 @@
     const options = document.querySelector('#options');
     const previous = document.querySelector('#previous');
     const next = document.querySelector('#next');
+    const restart = document.querySelector('#restart');
+    const autoNext = document.querySelector('#autoNext');
 
     function shuffled(items) {
       const copy = [...items];
@@ -195,7 +214,8 @@
     }
 
     function start() {
-      questions = shuffled(SOURCE_QUESTIONS);
+      clearTimeout(autoAdvanceTimer);
+      questions = shuffled(sourceQuestions);
       answers = {};
       index = 0;
       results.classList.add('hidden');
@@ -239,6 +259,17 @@
           options.querySelectorAll('.option').forEach((node) => node.classList.remove('selected'));
           button.classList.add('selected');
           next.disabled = false;
+
+          clearTimeout(autoAdvanceTimer);
+          if (autoNext.checked && index < questions.length - 1) {
+            const selectedQuestionId = item.id;
+            autoAdvanceTimer = setTimeout(() => {
+              if (questions[index]?.id !== selectedQuestionId) return;
+              index += 1;
+              render();
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }, 200);
+          }
         });
         options.appendChild(button);
       });
@@ -249,6 +280,7 @@
     }
 
     function goToPreviousQuestion() {
+      clearTimeout(autoAdvanceTimer);
       if (index === 0) return;
       index -= 1;
       render();
@@ -258,6 +290,7 @@
     previous.addEventListener('click', goToPreviousQuestion);
 
     next.addEventListener('click', () => {
+      clearTimeout(autoAdvanceTimer);
       if (!answers[questions[index].id]) return;
       if (index < questions.length - 1) {
         index += 1;
@@ -328,9 +361,49 @@
         .replaceAll("'", '&#039;');
     }
 
-    document.querySelector('#restart').addEventListener('click', start);
+    function getCookie(name) {
+      const prefix = encodeURIComponent(name) + '=';
+      const item = document.cookie.split('; ').find((cookie) => cookie.startsWith(prefix));
+      return item ? decodeURIComponent(item.slice(prefix.length)) : null;
+    }
+
+    function setCookie(name, value) {
+      document.cookie = encodeURIComponent(name) + '=' + encodeURIComponent(value) +
+        '; max-age=31536000; path=/; SameSite=Lax';
+    }
+
+    autoNext.checked = getCookie('biologyQuizAutoNext') === 'true';
+    autoNext.addEventListener('change', () => {
+      setCookie('biologyQuizAutoNext', String(autoNext.checked));
+    });
+    restart.addEventListener('click', start);
     document.querySelector('#again').addEventListener('click', start);
-    start();
+
+    async function loadQuestions() {
+      try {
+        const response = await fetch('./questions.json');
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        sourceQuestions = await response.json();
+        if (!Array.isArray(sourceQuestions) || !sourceQuestions.length) {
+          throw new Error('题库内容为空');
+        }
+        document.querySelector('#subtitle').textContent =
+          '共 ' + sourceQuestions.length + ' 题，完成后统一显示成绩和全部错题。';
+        restart.disabled = false;
+        start();
+      } catch (error) {
+        questionTag.textContent = '题库加载失败';
+        questionText.textContent = location.protocol === 'file:'
+          ? '浏览器不允许本地 HTML 直接 fetch 文件。请通过 GitHub Pages 或本地网页服务器打开。'
+          : '无法读取 questions.json，请确认它与 index.html 位于同一目录。';
+        options.innerHTML = '';
+        previous.disabled = true;
+        next.disabled = true;
+        console.error(error);
+      }
+    }
+
+    loadQuestions();
   </script>
 </body>
 </html>
