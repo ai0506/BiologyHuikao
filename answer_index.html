@@ -1,0 +1,431 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>G10 生物大题随机练习</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #17312b;
+      --muted: #64746f;
+      --paper: #fffdf7;
+      --line: #dce7e2;
+      --green: #19735a;
+      --green-soft: #e9f5ef;
+      --answer: #b64040;
+      --answer-soft: #fff0ef;
+      --gold: #d9a441;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 15% 5%, #eef8f0 0, transparent 28rem),
+        linear-gradient(135deg, #f8f4e8, #edf5ef);
+    }
+    button, input { font: inherit; }
+    .app { width: min(980px, calc(100% - 28px)); margin: 0 auto; padding: 28px 0 60px; }
+    .topbar {
+      display: flex; align-items: center; justify-content: space-between; gap: 16px;
+      margin-bottom: 18px;
+    }
+    h1 { margin: 0; font-size: clamp(24px, 5vw, 38px); letter-spacing: .03em; }
+    .subtitle { margin: 6px 0 0; color: var(--muted); line-height: 1.6; }
+    .top-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .shuffle, .secondary, .primary {
+      border-radius: 14px; padding: 12px 18px; font-weight: 700; cursor: pointer;
+    }
+    .shuffle, .secondary {
+      border: 1px solid var(--line); background: rgba(255,255,255,.86); color: var(--ink);
+    }
+    .primary { border: 0; color: white; background: var(--green); }
+    .answer-button { background: var(--answer); }
+    button:disabled { opacity: .45; cursor: not-allowed; }
+    .progress-wrap {
+      display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center;
+      margin: 18px 0;
+    }
+    .progress { height: 10px; background: #dfe8e3; border-radius: 20px; overflow: hidden; }
+    .progress > div { height: 100%; width: 0; background: linear-gradient(90deg, var(--green), #50aa7d); transition: width .25s; }
+    .progress-text { color: var(--muted); min-width: 86px; text-align: right; }
+    .card {
+      background: rgba(255,253,247,.96); border: 1px solid rgba(38,91,72,.13);
+      border-radius: 24px; padding: clamp(20px, 4.5vw, 38px);
+      box-shadow: 0 22px 60px rgba(42,72,59,.12);
+    }
+    .tag { color: var(--green); font-weight: 800; margin-bottom: 16px; }
+    .question-body { display: grid; gap: 16px; }
+    .para {
+      margin: 0;
+      font-size: clamp(17px, 2.2vw, 21px);
+      line-height: 2.15;
+      white-space: pre-wrap;
+    }
+    .blank-wrap {
+      position: relative;
+      display: inline-flex;
+      width: min(var(--blank-width, 12em), 100%);
+      max-width: 100%;
+      margin: 0 3px;
+      vertical-align: baseline;
+    }
+    .blank-input {
+      width: 100%;
+      min-width: 96px;
+      border: 0;
+      border-bottom: 2px solid #9fbdb0;
+      border-radius: 0;
+      padding: 3px 8px 4px;
+      background: rgba(233,245,239,.78);
+      color: var(--ink);
+      text-align: center;
+      outline: none;
+    }
+    .blank-input:focus { border-color: var(--green); background: white; }
+    .answer-overlay {
+      position: absolute;
+      left: 50%;
+      bottom: calc(100% + 2px);
+      transform: translateX(-50%);
+      width: max-content;
+      max-width: min(34em, calc(100vw - 48px));
+      display: grid;
+      place-items: center;
+      padding: 2px 8px;
+      border-radius: 8px;
+      background: rgba(182, 64, 64, .5);
+      color: white;
+      font-weight: 800;
+      font-size: 14px;
+      line-height: 1.25;
+      text-align: center;
+      pointer-events: none;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      z-index: 2;
+    }
+    .figure {
+      display: block; max-width: 100%; max-height: 520px; object-fit: contain;
+      margin: 6px auto; border-radius: 12px; border: 1px solid var(--line);
+      background: white;
+    }
+    .data-table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; background: white; }
+    table { width: 100%; border-collapse: collapse; min-width: 520px; }
+    td, th {
+      border: 1px solid var(--line);
+      padding: 10px 12px;
+      line-height: 1.55;
+      vertical-align: middle;
+      white-space: pre-wrap;
+    }
+    tr:first-child td { background: var(--green-soft); font-weight: 800; }
+    .actions {
+      display: flex; justify-content: space-between; align-items: center; gap: 12px;
+      margin-top: 26px; flex-wrap: wrap;
+    }
+    .top-controls {
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
+      gap: 12px;
+      margin: 0 0 22px;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+    }
+    .nav-actions, .answer-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+    .top-controls .nav-actions, .top-controls .answer-actions {
+      flex: 0 0 auto;
+      flex-wrap: nowrap;
+      width: auto;
+    }
+    .top-controls button { white-space: nowrap; }
+    .answer-panel {
+      margin-top: 22px;
+      border: 1px solid #efcdca;
+      background: var(--answer-soft);
+      border-radius: 16px;
+      padding: 18px 20px;
+    }
+    .answer-panel h2 { margin: 0 0 12px; font-size: 22px; color: var(--answer); }
+    .answer-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+    .answer-list li { line-height: 1.7; }
+    .answer-list strong { color: var(--answer); }
+    .hidden { display: none !important; }
+    @media (max-width: 680px) {
+      .topbar { align-items: flex-start; flex-direction: column; }
+      .top-actions, .nav-actions, .answer-actions { width: 100%; }
+      .top-controls { width: 100%; }
+      .top-controls .nav-actions, .top-controls .answer-actions { flex-wrap: wrap; }
+      .top-controls .nav-actions, .top-controls .answer-actions { width: auto; flex-wrap: nowrap; }
+      .shuffle, .secondary, .primary { flex: 1 1 auto; }
+      .card { border-radius: 18px; }
+      .blank-wrap { width: min(var(--blank-width, 12em), 100%); margin: 4px 0; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <div>
+        <h1>生物大题随机练习</h1>
+        <p class="subtitle" id="subtitle">正在加载题库...</p>
+      </div>
+      <div class="top-actions">
+        <button class="shuffle" id="restart" type="button" disabled>重新随机开始</button>
+      </div>
+    </header>
+
+    <section id="practice">
+      <div class="progress-wrap">
+        <div class="progress"><div id="progressBar"></div></div>
+        <div class="progress-text" id="progressText"></div>
+      </div>
+      <article class="card">
+        <div class="tag" id="questionTag"></div>
+        <div class="top-controls">
+          <div class="nav-actions">
+            <button class="secondary" id="previous" type="button">上一题</button>
+            <button class="primary" id="next" type="button">下一题</button>
+          </div>
+          <div class="answer-actions">
+            <button class="primary answer-button" id="showAnswer" type="button">显示答案</button>
+          </div>
+        </div>
+        <div class="question-body" id="questionBody"></div>
+        <div class="answer-panel hidden" id="answerPanel">
+          <h2>参考答案</h2>
+          <ul class="answer-list" id="answerList"></ul>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <script>
+    let sourceQuestions = [];
+    let questions = [];
+    let index = 0;
+    const inputValues = {};
+    const shownAnswers = {};
+
+    const progressBar = document.querySelector('#progressBar');
+    const progressText = document.querySelector('#progressText');
+    const questionTag = document.querySelector('#questionTag');
+    const questionBody = document.querySelector('#questionBody');
+    const answerPanel = document.querySelector('#answerPanel');
+    const answerList = document.querySelector('#answerList');
+    const previous = document.querySelector('#previous');
+    const next = document.querySelector('#next');
+    const restart = document.querySelector('#restart');
+    const showAnswer = document.querySelector('#showAnswer');
+
+    function shuffled(items) {
+      const copy = [...items];
+      for (let i = copy.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+
+    function start() {
+      questions = shuffled(sourceQuestions);
+      index = 0;
+      for (const key of Object.keys(inputValues)) delete inputValues[key];
+      for (const key of Object.keys(shownAnswers)) delete shownAnswers[key];
+      render();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function storageKey(question, blankId) {
+      return question.id + ':' + blankId;
+    }
+
+    function displayImagePath(file) {
+      const normalized = String(file || '').replaceAll('\\\\', '/');
+      const marker = '/answer_assets/';
+      const markerIndex = normalized.lastIndexOf(marker);
+      if (markerIndex >= 0) return './answer_assets/' + normalized.slice(markerIndex + marker.length);
+      return './answer_assets/' + normalized.split('/').pop();
+    }
+
+    function render() {
+      const item = questions[index];
+      const answersVisible = Boolean(shownAnswers[item.id]);
+      progressText.textContent = (index + 1) + ' / ' + questions.length;
+      progressBar.style.width = ((index + 1) / questions.length * 100) + '%';
+      questionTag.textContent = '随机第 ' + (index + 1) + ' 题 · 原题号 ' + item.source_number;
+      questionBody.innerHTML = '';
+
+      item.blocks.forEach((block) => {
+        if (block.type === 'paragraph') renderParagraph(item, block, answersVisible);
+        if (block.type === 'image') renderImage(block);
+        if (block.type === 'table') renderTable(block);
+      });
+
+      renderAnswerPanel(item, false);
+      previous.disabled = index === 0;
+      next.disabled = index === questions.length - 1;
+      showAnswer.textContent = answersVisible ? '隐藏答案' : '显示答案';
+    }
+
+    function renderParagraph(item, block, answersVisible) {
+      const paragraph = document.createElement('p');
+      paragraph.className = 'para';
+      block.segments.forEach((segment, segmentIndex) => {
+        if (segment.type === 'text') {
+          const previousSegment = block.segments[segmentIndex - 1];
+          const nextSegment = block.segments[segmentIndex + 1];
+          let text = segment.text;
+          if (nextSegment?.type === 'blank') text = text.replace(/[_\s]+$/u, '');
+          if (previousSegment?.type === 'blank') text = text.replace(/^[_\s]+/u, '');
+          paragraph.appendChild(document.createTextNode(text));
+        } else if (segment.type === 'blank') {
+          const key = storageKey(item, segment.blank_id);
+          const wrap = document.createElement('span');
+          wrap.className = 'blank-wrap';
+          wrap.style.setProperty('--blank-width', blankWidth(block.segments, segmentIndex, segment.answer));
+          const input = document.createElement('input');
+          input.className = 'blank-input';
+          input.type = 'text';
+          input.value = inputValues[key] || '';
+          input.autocomplete = 'off';
+          input.dataset.key = key;
+          input.addEventListener('input', () => {
+            inputValues[key] = input.value;
+          });
+          wrap.appendChild(input);
+          if (answersVisible) {
+            const answer = document.createElement('span');
+            answer.className = 'answer-overlay';
+            answer.textContent = segment.answer;
+            wrap.appendChild(answer);
+          }
+          paragraph.appendChild(wrap);
+        } else if (segment.type === 'image') {
+          renderImage(segment);
+        }
+      });
+      questionBody.appendChild(paragraph);
+    }
+
+    function blankWidth(segments, index, answer) {
+      const previousText = segments[index - 1]?.type === 'text' ? segments[index - 1].text : '';
+      const nextText = segments[index + 1]?.type === 'text' ? segments[index + 1].text : '';
+      const before = previousText.match(/[_\s]+$/u)?.[0]?.length || 0;
+      const after = nextText.match(/^[_\s]+/u)?.[0]?.length || 0;
+      const originalLength = before + after;
+      const answerLength = Array.from(String(answer || '')).length;
+      const estimated = Math.max(originalLength, answerLength + 2);
+      const width = Math.min(Math.max(estimated * 1.15, 5), answerLength > 18 ? 34 : 24);
+      return width.toFixed(1) + 'em';
+    }
+
+    function renderImage(block) {
+      const img = document.createElement('img');
+      img.className = 'figure';
+      img.src = displayImagePath(block.file);
+      img.alt = '题目插图';
+      questionBody.appendChild(img);
+    }
+
+    function renderTable(block) {
+      const wrap = document.createElement('div');
+      wrap.className = 'data-table-wrap';
+      const table = document.createElement('table');
+      block.rows.forEach((row) => {
+        const tr = document.createElement('tr');
+        row.forEach((cell) => {
+          const td = document.createElement('td');
+          td.textContent = cell;
+          tr.appendChild(td);
+        });
+        table.appendChild(tr);
+      });
+      wrap.appendChild(table);
+      questionBody.appendChild(wrap);
+    }
+
+    function renderAnswerPanel(item, answersVisible) {
+      answerList.innerHTML = '';
+      if (!answersVisible) {
+        answerPanel.classList.add('hidden');
+        return;
+      }
+
+      item.blanks.forEach((blank, blankIndex) => {
+        const li = document.createElement('li');
+        const strong = document.createElement('strong');
+        strong.textContent = '空 ' + (blankIndex + 1) + '：';
+        li.appendChild(strong);
+        li.appendChild(document.createTextNode(blank.answer));
+        answerList.appendChild(li);
+      });
+      answerPanel.classList.remove('hidden');
+    }
+
+    previous.addEventListener('click', () => {
+      if (index === 0) return;
+      index -= 1;
+      render();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    next.addEventListener('click', () => {
+      if (index >= questions.length - 1) return;
+      index += 1;
+      render();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    showAnswer.addEventListener('click', () => {
+      const item = questions[index];
+      shownAnswers[item.id] = !shownAnswers[item.id];
+      render();
+    });
+
+    restart.addEventListener('click', start);
+
+    document.addEventListener('keydown', (event) => {
+      if (event.ctrlKey || event.altKey || event.metaKey) return;
+      if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) return;
+      if (event.key === 'ArrowLeft') {
+        event.preventDefault();
+        previous.click();
+      } else if (event.key === 'ArrowRight') {
+        event.preventDefault();
+        next.click();
+      }
+    });
+
+    async function loadQuestions() {
+      try {
+        const response = await fetch('./answer_questions.json');
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        const payload = await response.json();
+        sourceQuestions = Array.isArray(payload.questions) ? payload.questions : [];
+        if (!sourceQuestions.length) throw new Error('题库内容为空');
+        document.querySelector('#subtitle').textContent =
+          '共 ' + sourceQuestions.length + ' 道大题，进入页面后自动随机排序。';
+        restart.disabled = false;
+        start();
+      } catch (error) {
+        questionTag.textContent = '题库加载失败';
+        questionBody.textContent = location.protocol === 'file:'
+          ? '浏览器通常不允许本地 HTML 直接 fetch 文件，请通过本地网页服务器或 GitHub Pages 打开。'
+          : '无法读取 answer_questions.json，请确认它与本页面位于同一目录。';
+        previous.disabled = true;
+        next.disabled = true;
+        showAnswer.disabled = true;
+        console.error(error);
+      }
+    }
+
+    loadQuestions();
+  </script>
+</body>
+</html>
